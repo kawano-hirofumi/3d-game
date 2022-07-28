@@ -1,5 +1,6 @@
 {
   "name": "deploytest",
+  "homepage": "https://kawano-hirofumi.github.io/deploytest",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -10,6 +11,7 @@
     "@types/node": "^16.11.46",
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",
+    "gh-pages": "^4.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
@@ -19,6 +21,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "deploy": "yarn build && gh-pages -d build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
