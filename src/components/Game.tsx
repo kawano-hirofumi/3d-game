@@ -1,13 +1,17 @@
 import { FC, memo, useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from 'three'
-export const Test = () => {
+export const Game = () => {
     // サイズを指定
     const width = 960;
     const height = 540;
     let rot = 0;
 
+    const [gameStatus, setGameStatus] = useState<boolean>(true);
 
     const canvasRef = useRef(HTMLCanvasElement.prototype);
+    const gameStatusRef = useRef(true);
+
+    gameStatusRef.current = gameStatus;
 
     useEffect(() => {
         const renderer = new THREE.WebGLRenderer({
@@ -38,6 +42,7 @@ export const Test = () => {
         scene.add(box4);
         container.add(box3)
         container.add(box4)
+        container.position.set(0, 0, 0);
 
 
 
@@ -77,35 +82,51 @@ export const Test = () => {
         // シーンに追加
         scene.add(directionalLight);
 
+
+        let lastTime = performance.now();
         tick();
 
         // 毎フレーム時に実行されるループイベントです
         function tick() {
 
-            container.rotation.y -= 0.01;
-            container.position.set(0, 0, 0);
+            if (gameStatusRef.current) {
+                //時間ごとの動作量を計算
+                var nowTime = performance.now()
+                let time = nowTime - lastTime;
+                lastTime = nowTime;
+                const movement = (time / 10);//動作量
 
-            box3.rotation.x += 0.01;
 
-            // 毎フレーム角度を0.5度ずつ足していく
-            rot += 0.5;
-            // ラジアンに変換する
-            const radian = (rot * Math.PI) / 180;
-            // 角度に応じてカメラの位置を設定
-            camera.position.x = 1000 * Math.sin(radian);
-            camera.position.z = 1000 * Math.cos(radian);
-            // 原点方向を見つめる
-            camera.lookAt(new THREE.Vector3(0, 0, 0));
+                container.rotation.y -= 0.01 * movement;
 
-            renderer.render(scene, camera); // レンダリング
+
+                box3.rotation.x += 0.01 * movement;
+
+                // 毎フレーム角度を0.5度ずつ足していく
+                rot += 0.5;
+                // ラジアンに変換する
+                const radian = (rot * Math.PI) / 180;
+                // 角度に応じてカメラの位置を設定
+                camera.position.x = 1000 * Math.sin(radian);
+                camera.position.z = 1000 * Math.cos(radian);
+                // 原点方向を見つめる
+                camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+                renderer.render(scene, camera); // レンダリング
+
+            }
 
             requestAnimationFrame(tick);
         }
     }, [])
+
+    const onStart = () => setGameStatus(true);
+    const onStop = () => setGameStatus(false);
     return (
         <>
-
             <canvas ref={canvasRef} />
+            <button onClick={onStart}>スタート</button>
+            <button onClick={onStop}>ストップ</button>
         </>
 
     )

@@ -1,6 +1,6 @@
 import { FC, memo, useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from 'three'
-export const Test = () => {
+export const Fiber = () => {
     // サイズを指定
     const width = 960;
     const height = 540;
@@ -22,6 +22,7 @@ export const Test = () => {
         // カメラを作成
         const camera = new THREE.PerspectiveCamera(100, width / height);
         camera.position.set(0, 0, +1000);
+
 
         // 円柱と円を入れるコンテナ(オブジェクトをまとめることができる)
         const container = new THREE.Object3D();
@@ -104,7 +105,6 @@ export const Test = () => {
     }, [])
     return (
         <>
-
             <canvas ref={canvasRef} />
         </>
 
