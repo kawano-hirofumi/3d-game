@@ -202,7 +202,7 @@ export const Game = memo(() => {
                     <div style={{ height: DISPLAY_HEIGHT, width: DISPLAY_WIDTH, textAlign: "center" }}>
                         <p>ゲームオーバー</p>
                         <p>{timeRef.current}秒</p>
-                        <button><a href="/3d-game">リセット</a></button>
+                        <button><a href="/3d-game/">リセット</a></button>
                     </div>
             }
         </>
