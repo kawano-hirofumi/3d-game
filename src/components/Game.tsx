@@ -1,80 +1,85 @@
 import { FC, memo, useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from 'three'
+
+type EnemyBox = {
+    box: THREE.Mesh;
+    isMoveing: boolean;
+}
+
 export const Game = () => {
     // サイズを指定
-    const width = 960;
-    const height = 540;
-    let rot = 0;
+    const DISPLAY_WIDTH = 960;
+    const DISPLAY_HEIGHT = 540;
+    const FIELD_LIMIT = 500;
+    const BOX_HALF_SIZE = 100;
+    const BOX_START_POSITION_Z = -2000;
+    const BOX_MOVEMENT = 10;
+    const CAMERA_FIELD_OF_VIEW = 90; //視野(度)
+    const CAMERA_POSITION_X = 500;
+    const CAMERA_POSITION_Z = 1000;
+    const PLAYER_HALF_SIZE = 35;
+    const PLAYER_POSITION_Z = 500;
+    const HIT_PLAY = 15; //当たり判定のあそび
 
+
+    //スタート状態を保持するステート
     const [gameStatus, setGameStatus] = useState<boolean>(true);
 
+    //canvas要素を保持
     const canvasRef = useRef(HTMLCanvasElement.prototype);
+    //スタート状態を保持
     const gameStatusRef = useRef(true);
+    //マウスポジションを保持
+    const mousePositionYRef = useRef(0);
 
+    //スタート状態をステートからuseRefに代入（更新されたステートをタイマー処理内で使用するため）
     gameStatusRef.current = gameStatus;
 
     useEffect(() => {
+
+        //マウスムーブイベントを定義
+        canvasRef.current.addEventListener('mousemove', function (evt) {
+            var mousePos = getMousePosition(canvasRef.current, evt);
+            //プレイヤーの中心からのY座標
+            mousePositionYRef.current = ((DISPLAY_HEIGHT / 2) - mousePos.y) * (FIELD_LIMIT * 2 / DISPLAY_HEIGHT);
+        }, false);
+
+        //プレイヤーの移動とマウスカーソルの移動を調整する倍率を計算
+        const movementMagnification = calc();
+
+        //レンダラーを作成
         const renderer = new THREE.WebGLRenderer({
             canvas: canvasRef.current,
         });
         renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setSize(width, height);
+        renderer.setSize(DISPLAY_WIDTH, DISPLAY_HEIGHT);
 
         // シーンを作成
         const scene = new THREE.Scene();
 
         // カメラを作成
-        const camera = new THREE.PerspectiveCamera(100, width / height);
-        camera.position.set(0, 0, +1000);
+        const camera = new THREE.PerspectiveCamera(CAMERA_FIELD_OF_VIEW, DISPLAY_WIDTH / DISPLAY_HEIGHT, 0.1, 2000);
+        camera.position.set(CAMERA_POSITION_X, 0, CAMERA_POSITION_Z);
 
-        // 円柱と円を入れるコンテナ(オブジェクトをまとめることができる)
-        const container = new THREE.Object3D();
-        scene.add(container);
-        //円柱
-        const geometry3 = new THREE.CylinderGeometry(160, 160, 50, 32);//頂点の半径,底の半径,高さ,横の角数(min:3,max:64),縦の角数(min:3,max:64)
-        const material3 = new THREE.MeshPhongMaterial();
-        const box3 = new THREE.Mesh(geometry3, material3);
-        scene.add(box3);
-        //円
-        const geometry4 = new THREE.TorusGeometry(200, 30, 16, 100);//半径,太さ,円の垂直方向の角数,円の角数,角度
-        const material4 = new THREE.MeshLambertMaterial({ color: 0x9999FF });
-        const box4 = new THREE.Mesh(geometry4, material4);
-        scene.add(box4);
-        container.add(box3)
-        container.add(box4)
-        container.position.set(0, 0, 0);
+        //天井
+        const roofGeometry = new THREE.BoxGeometry(400, FIELD_LIMIT * 2, 8000);
+        const roofMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+        const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+        roof.position.set(0, FIELD_LIMIT * 2, -3000)
+        scene.add(roof);
+        //床 
+        const floorGeometry = new THREE.BoxGeometry(400, FIELD_LIMIT * 2, 8000);
+        const floorMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.position.set(0, -FIELD_LIMIT * 2, -3000)
+        scene.add(floor);
 
-
-
-        /** 星屑を作成します */
-        function createStarField() {
-            // 頂点情報を作詞絵
-            const vertices = [];
-            for (let i = 0; i < 1000; i++) {
-                const x = 2000 * (Math.random() - 0.5);
-                const y = 2000 * (Math.random() - 0.5);
-                const z = 2000 * (Math.random() - 0.5);
-
-                vertices.push(x, y, z);
-            }
-
-            // 形状データを作成
-            const geometry0 = new THREE.BufferGeometry();//大量の頂点データを操作するときに便利
-            geometry0.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-
-            // マテリアルを作成
-            const material0 = new THREE.PointsMaterial({
-                size: 10,
-                color: "0xffffff",
-            });
-
-            // 物体を作成
-            const mesh = new THREE.Points(geometry0, material0);
-            scene.add(mesh);
-        }
-
-        createStarField();
-
+        //プレイヤーを作成
+        const playerGeometry = new THREE.SphereGeometry(PLAYER_HALF_SIZE, 50, 50);
+        const playerMaterial = new THREE.MeshToonMaterial({ color: 'red' });
+        const player = new THREE.Mesh(playerGeometry, playerMaterial);
+        player.position.set(0, -(FIELD_LIMIT - PLAYER_HALF_SIZE), PLAYER_POSITION_Z)
+        scene.add(player);
 
         // 平行光源
         const directionalLight = new THREE.DirectionalLight('red');
@@ -82,13 +87,26 @@ export const Game = () => {
         // シーンに追加
         scene.add(directionalLight);
 
+        //ボックスを初期化
+        let boxs: Array<EnemyBox> = [];
+        let enemyBox: EnemyBox;
+        for (let i = 0; i < 10; i++) {
+            const boxGeometry = new THREE.BoxGeometry(BOX_HALF_SIZE * 2, BOX_HALF_SIZE * 2, BOX_HALF_SIZE * 2);
+            const boxMaterial = new THREE.MeshNormalMaterial();
+            const box = new THREE.Mesh(boxGeometry, boxMaterial);
+            box.position.set(0, generateRundomHeight(), BOX_START_POSITION_Z)
+            scene.add(box);
+            enemyBox = { box: box, isMoveing: false };
+            boxs.push(enemyBox)
+        }
 
+        //ループイベント起動時の時間を取得
         let lastTime = performance.now();
+        //ループイベント起動
         tick();
 
-        // 毎フレーム時に実行されるループイベントです
+        // 毎フレーム時に実行されるループイベント
         function tick() {
-
             if (gameStatusRef.current) {
                 //時間ごとの動作量を計算
                 var nowTime = performance.now()
@@ -96,23 +114,42 @@ export const Game = () => {
                 lastTime = nowTime;
                 const movement = (time / 10);//動作量
 
+                //プレイヤーの移動
+                if (mousePositionYRef.current * movementMagnification < (FIELD_LIMIT - PLAYER_HALF_SIZE) && mousePositionYRef.current * movementMagnification > -(FIELD_LIMIT - PLAYER_HALF_SIZE)) {
+                    player.position.y = mousePositionYRef.current * movementMagnification;
+                }
 
-                container.rotation.y -= 0.01 * movement;
+                //ボックスの移動
+                boxs.map((value) => {
 
+                    if (value.isMoveing === false) {
+                        if (Math.random() * 10 >= 9.95) {
+                            value.isMoveing = true;
+                        }
+                    }
+                    else {
+                        if (value.box.position.z <= CAMERA_POSITION_Z) {
+                            //ボックスを移動
+                            value.box.position.z += BOX_MOVEMENT * movement;
 
-                box3.rotation.x += 0.01 * movement;
+                            //当たり判定
+                            if (value.box.position.z + BOX_HALF_SIZE - (BOX_MOVEMENT * movement) >= PLAYER_POSITION_Z - PLAYER_HALF_SIZE + HIT_PLAY && value.box.position.z - BOX_HALF_SIZE - (BOX_MOVEMENT * movement) <= PLAYER_POSITION_Z + PLAYER_HALF_SIZE - HIT_PLAY) {
+                                if (value.box.position.y + BOX_HALF_SIZE >= player.position.y - PLAYER_HALF_SIZE + HIT_PLAY && value.box.position.y - BOX_HALF_SIZE <= player.position.y + PLAYER_HALF_SIZE - HIT_PLAY) {
+                                    // console.log((value.box.position.y + BOX_HALF_SIZE) + ">=" + (player.position.y - PLAYER_HALF_SIZE - HIT_PLAY))
+                                }
+                            }
+                        } else {
+                            //ボックスの位置をリセット
+                            value.box.position.set(0, generateRundomHeight(), BOX_START_POSITION_Z)
+                            value.isMoveing = false;
+                        }
+                    }
+                })
 
-                // 毎フレーム角度を0.5度ずつ足していく
-                rot += 0.5;
-                // ラジアンに変換する
-                const radian = (rot * Math.PI) / 180;
-                // 角度に応じてカメラの位置を設定
-                camera.position.x = 1000 * Math.sin(radian);
-                camera.position.z = 1000 * Math.cos(radian);
                 // 原点方向を見つめる
                 camera.lookAt(new THREE.Vector3(0, 0, 0));
-
-                renderer.render(scene, camera); // レンダリング
+                // レンダリング
+                renderer.render(scene, camera);
 
             }
 
@@ -120,8 +157,31 @@ export const Game = () => {
         }
     }, [])
 
-    const onStart = () => setGameStatus(true);
-    const onStop = () => setGameStatus(false);
+    //マウスポジションを取得
+    function getMousePosition(canvas: HTMLCanvasElement, evt: HTMLElementEventMap['mousemove']) {
+        var rect = canvas.getBoundingClientRect();
+        return {
+            x: evt.clientX - rect.left,
+            y: evt.clientY - rect.top
+        };
+    }
+
+    //高さをランダムに生成
+    function generateRundomHeight(): number {
+        return (Math.random() - 0.5) * (FIELD_LIMIT * 2 - BOX_HALF_SIZE * 2);
+    }
+
+    //プレイヤーの位置に対する移動距離の倍率を計算
+    function calc(): number {
+        let theta0 = Math.atan(CAMERA_POSITION_Z / CAMERA_POSITION_X); //ラジアン
+        let theta1 = Math.atan((CAMERA_POSITION_Z - PLAYER_POSITION_Z) / CAMERA_POSITION_X); //ラジアン
+        let theta2 = (theta0 / (Math.PI / 180) - CAMERA_FIELD_OF_VIEW / 2) * (Math.PI / 180); //ラジアン
+
+        return Math.cos(theta2) / Math.cos(theta1);
+    }
+
+    const onStart = useCallback(() => setGameStatus(true), []);
+    const onStop = useCallback(() => setGameStatus(false), []);
     return (
         <>
             <canvas ref={canvasRef} />
