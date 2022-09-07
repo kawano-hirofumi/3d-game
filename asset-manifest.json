@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/deploytest/static/css/main.073c9b0a.css",
-    "main.js": "/deploytest/static/js/main.de78afa1.js",
-    "static/js/787.d415baef.chunk.js": "/deploytest/static/js/787.d415baef.chunk.js",
-    "index.html": "/deploytest/index.html",
-    "main.073c9b0a.css.map": "/deploytest/static/css/main.073c9b0a.css.map",
-    "main.de78afa1.js.map": "/deploytest/static/js/main.de78afa1.js.map",
-    "787.d415baef.chunk.js.map": "/deploytest/static/js/787.d415baef.chunk.js.map"
+    "main.css": "/3d_game/static/css/main.073c9b0a.css",
+    "main.js": "/3d_game/static/js/main.59d1ddb4.js",
+    "static/js/787.8eb66757.chunk.js": "/3d_game/static/js/787.8eb66757.chunk.js",
+    "index.html": "/3d_game/index.html",
+    "main.073c9b0a.css.map": "/3d_game/static/css/main.073c9b0a.css.map",
+    "main.59d1ddb4.js.map": "/3d_game/static/js/main.59d1ddb4.js.map",
+    "787.8eb66757.chunk.js.map": "/3d_game/static/js/787.8eb66757.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.073c9b0a.css",
-    "static/js/main.de78afa1.js"
+    "static/js/main.59d1ddb4.js"
   ]
 }
