@@ -1,4 +1,4 @@
-import { FC, memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import * as THREE from 'three'
 
 type EnemyBox = {
@@ -6,40 +6,43 @@ type EnemyBox = {
     isMoveing: boolean;
 }
 
-export const Game = () => {
+export const Game = memo(() => {
     // サイズを指定
-    const DISPLAY_WIDTH = 960;
-    const DISPLAY_HEIGHT = 540;
-    const FIELD_LIMIT = 500;
-    const BOX_HALF_SIZE = 100;
-    const BOX_START_POSITION_Z = -2000;
-    const BOX_MOVEMENT = 10;
-    const CAMERA_FIELD_OF_VIEW = 90; //視野(度)
-    const CAMERA_POSITION_X = 500;
-    const CAMERA_POSITION_Z = 1000;
-    const PLAYER_HALF_SIZE = 35;
-    const PLAYER_POSITION_Z = 500;
-    const HIT_PLAY = 15; //当たり判定のあそび
+    const DISPLAY_WIDTH = 960; //ゲーム表示枠横幅
+    const DISPLAY_HEIGHT = 540; //ゲーム表示枠高さ
+    const FIELD_LIMIT = 500; //ゲームで移動できる高さ(実際は　+FIELD_LIMIT　～　-FIELD_LIMIT)
+    const BOX_HALF_SIZE = 100; //ボックスのサイズ(実際は　+BOX_HALF_SIZE　～　-BOX_HALF_SIZE)
+    const BOX_START_POSITION_Z = -2000; //ボックスのスタートポジション
+    const BOX_MOVEMENT = 10; //ボックスの移動距離
+    const BOX_APPEARANCE_RATE = 0.006; //ボックス出現率(0~1)
+    const CAMERA_FIELD_OF_VIEW = 90; //カメラの視野(度)
+    const CAMERA_POSITION_X = 500; //カメラのポジション（X軸）
+    const CAMERA_POSITION_Z = 1000; //カメラのポジション（Z軸）
+    const PLAYER_HALF_SIZE = 35; //プレイヤーの半径
+    const PLAYER_POSITION_Z = 500; //プレイヤーのポジション（Z軸）
+    const HIT_PLAY = 15; //当たり判定のあそび（通常の当たり判定はシビアすぎて面白くないため）
 
 
-    //スタート状態を保持するステート
-    const [gameStatus, setGameStatus] = useState<boolean>(true);
+    //ゲームオーバーを保持するステート
+    const [gameOver, setGameOver] = useState<boolean>(false);
 
     //canvas要素を保持
-    const canvasRef = useRef(HTMLCanvasElement.prototype);
-    //スタート状態を保持
-    const gameStatusRef = useRef(true);
+    const canvasRef = useRef<HTMLCanvasElement>(HTMLCanvasElement.prototype);
     //マウスポジションを保持
-    const mousePositionYRef = useRef(0);
+    const mousePositionYRef = useRef<number>(0);
+    //ゲームオーバー状態を保持
+    const gameOverRef = useRef<boolean>(true);
+    //プレイ時間を保持
+    const timeRef = useRef<number>();
 
     //スタート状態をステートからuseRefに代入（更新されたステートをタイマー処理内で使用するため）
-    gameStatusRef.current = gameStatus;
+    gameOverRef.current = gameOver;
 
     useEffect(() => {
 
         //マウスムーブイベントを定義
         canvasRef.current.addEventListener('mousemove', function (evt) {
-            var mousePos = getMousePosition(canvasRef.current, evt);
+            let mousePos = getMousePosition(canvasRef.current, evt);
             //プレイヤーの中心からのY座標
             mousePositionYRef.current = ((DISPLAY_HEIGHT / 2) - mousePos.y) * (FIELD_LIMIT * 2 / DISPLAY_HEIGHT);
         }, false);
@@ -102,57 +105,65 @@ export const Game = () => {
 
         //ループイベント起動時の時間を取得
         let lastTime = performance.now();
+        //リザルト用のスタート時間を保持
+        let startTime = lastTime;
         //ループイベント起動
         tick();
 
         // 毎フレーム時に実行されるループイベント
         function tick() {
-            if (gameStatusRef.current) {
-                //時間ごとの動作量を計算
-                var nowTime = performance.now()
-                let time = nowTime - lastTime;
-                lastTime = nowTime;
-                const movement = (time / 10);//動作量
+            //時間ごとの動作量を計算
+            var nowTime = performance.now()
+            let time = nowTime - lastTime;
+            lastTime = nowTime;
+            const movement = (time / 10);//動作量
 
-                //プレイヤーの移動
-                if (mousePositionYRef.current * movementMagnification < (FIELD_LIMIT - PLAYER_HALF_SIZE) && mousePositionYRef.current * movementMagnification > -(FIELD_LIMIT - PLAYER_HALF_SIZE)) {
-                    player.position.y = mousePositionYRef.current * movementMagnification;
-                }
-
-                //ボックスの移動
-                boxs.map((value) => {
-
-                    if (value.isMoveing === false) {
-                        if (Math.random() * 10 >= 9.95) {
-                            value.isMoveing = true;
-                        }
-                    }
-                    else {
-                        if (value.box.position.z <= CAMERA_POSITION_Z) {
-                            //ボックスを移動
-                            value.box.position.z += BOX_MOVEMENT * movement;
-
-                            //当たり判定
-                            if (value.box.position.z + BOX_HALF_SIZE - (BOX_MOVEMENT * movement) >= PLAYER_POSITION_Z - PLAYER_HALF_SIZE + HIT_PLAY && value.box.position.z - BOX_HALF_SIZE - (BOX_MOVEMENT * movement) <= PLAYER_POSITION_Z + PLAYER_HALF_SIZE - HIT_PLAY) {
-                                if (value.box.position.y + BOX_HALF_SIZE >= player.position.y - PLAYER_HALF_SIZE + HIT_PLAY && value.box.position.y - BOX_HALF_SIZE <= player.position.y + PLAYER_HALF_SIZE - HIT_PLAY) {
-                                    // console.log((value.box.position.y + BOX_HALF_SIZE) + ">=" + (player.position.y - PLAYER_HALF_SIZE - HIT_PLAY))
-                                }
-                            }
-                        } else {
-                            //ボックスの位置をリセット
-                            value.box.position.set(0, generateRundomHeight(), BOX_START_POSITION_Z)
-                            value.isMoveing = false;
-                        }
-                    }
-                })
-
-                // 原点方向を見つめる
-                camera.lookAt(new THREE.Vector3(0, 0, 0));
-                // レンダリング
-                renderer.render(scene, camera);
-
+            //プレイヤーの移動
+            if (mousePositionYRef.current * movementMagnification < (FIELD_LIMIT - PLAYER_HALF_SIZE) && mousePositionYRef.current * movementMagnification > -(FIELD_LIMIT - PLAYER_HALF_SIZE)) {
+                player.position.y = mousePositionYRef.current * movementMagnification;
             }
 
+            //ボックスの移動
+            boxs.map((value) => {
+
+                if (value.isMoveing === false) {
+                    if (Math.random() <= BOX_APPEARANCE_RATE) {
+                        value.isMoveing = true;
+                    }
+                }
+                else {
+                    if (value.box.position.z <= CAMERA_POSITION_Z) {
+                        //ボックスを移動
+                        value.box.position.z += BOX_MOVEMENT * movement;
+
+                        //当たり判定
+                        if (value.box.position.z + BOX_HALF_SIZE - (BOX_MOVEMENT * movement) >= PLAYER_POSITION_Z - PLAYER_HALF_SIZE + HIT_PLAY && value.box.position.z - BOX_HALF_SIZE - (BOX_MOVEMENT * movement) <= PLAYER_POSITION_Z + PLAYER_HALF_SIZE - HIT_PLAY) {
+                            if (value.box.position.y + BOX_HALF_SIZE >= player.position.y - PLAYER_HALF_SIZE + HIT_PLAY && value.box.position.y - BOX_HALF_SIZE <= player.position.y + PLAYER_HALF_SIZE - HIT_PLAY) {
+                                //スコアタイムを取得
+                                timeRef.current = Math.floor((nowTime - startTime) / 100) / 10;
+                                //ゲーム終了
+                                setGameOver(true);
+                            }
+                        }
+                    } else {
+                        //ボックスの位置をリセット
+                        value.box.position.set(0, generateRundomHeight(), BOX_START_POSITION_Z)
+                        value.isMoveing = false;
+                    }
+                }
+            })
+
+            // 原点方向を見つめる
+            camera.lookAt(new THREE.Vector3(0, 0, 0));
+            // レンダリング
+            renderer.render(scene, camera);
+
+            //ゲームオーバーならループを抜ける
+            if (gameOverRef.current) {
+                return;
+            }
+
+            //ループ
             requestAnimationFrame(tick);
         }
     }, [])
@@ -180,14 +191,20 @@ export const Game = () => {
         return Math.cos(theta2) / Math.cos(theta1);
     }
 
-    const onStart = useCallback(() => setGameStatus(true), []);
-    const onStop = useCallback(() => setGameStatus(false), []);
     return (
         <>
-            <canvas ref={canvasRef} />
-            <button onClick={onStart}>スタート</button>
-            <button onClick={onStop}>ストップ</button>
+            {
+                !gameOver ?
+                    <>
+                        <canvas ref={canvasRef} />
+                    </>
+                    :
+                    <div style={{ height: DISPLAY_HEIGHT, width: DISPLAY_WIDTH, textAlign: "center" }}>
+                        <p>ゲームオーバー</p>
+                        <p>{timeRef.current}秒</p>
+                        <button><a href="/">リセット</a></button>
+                    </div>
+            }
         </>
-
     )
-}
+})
