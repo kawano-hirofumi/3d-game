@@ -6,21 +6,26 @@ type EnemyBox = {
     isMoveing: boolean;
 }
 
+type MousPos = {
+    x: number,
+    y: number
+}
+
 export const Game = memo(() => {
     // サイズを指定
-    const DISPLAY_WIDTH = 960; //ゲーム表示枠横幅
-    const DISPLAY_HEIGHT = 540; //ゲーム表示枠高さ
-    const FIELD_LIMIT = 500; //ゲームで移動できる高さ(実際は　+FIELD_LIMIT　～　-FIELD_LIMIT)
-    const BOX_HALF_SIZE = 100; //ボックスのサイズ(実際は　+BOX_HALF_SIZE　～　-BOX_HALF_SIZE)
-    const BOX_START_POSITION_Z = -2000; //ボックスのスタートポジション
-    const BOX_MOVEMENT = 10; //ボックスの移動距離
-    const BOX_APPEARANCE_RATE = 0.006; //ボックス出現率(0~1)
-    const CAMERA_FIELD_OF_VIEW = 90; //カメラの視野(度)
-    const CAMERA_POSITION_X = 500; //カメラのポジション（X軸）
-    const CAMERA_POSITION_Z = 1000; //カメラのポジション（Z軸）
-    const PLAYER_HALF_SIZE = 35; //プレイヤーの半径
-    const PLAYER_POSITION_Z = 500; //プレイヤーのポジション（Z軸）
-    const HIT_PLAY = 15; //当たり判定のあそび（通常の当たり判定はシビアすぎて面白くないため）
+    const DISPLAY_WIDTH: number = 960; //ゲーム表示枠横幅
+    const DISPLAY_HEIGHT: number = 540; //ゲーム表示枠高さ
+    const FIELD_LIMIT: number = 500; //ゲームで移動できる高さ(実際は　+FIELD_LIMIT　～　-FIELD_LIMIT)
+    const BOX_HALF_SIZE: number = 100; //ボックスのサイズ(実際は　+BOX_HALF_SIZE　～　-BOX_HALF_SIZE)
+    const BOX_START_POSITION_Z: number = -2000; //ボックスのスタートポジション
+    const BOX_MOVEMENT: number = 10; //ボックスの移動距離
+    const BOX_APPEARANCE_RATE: number = 0.006; //ボックス出現率(0~1)
+    const CAMERA_FIELD_OF_VIEW: number = 90; //カメラの視野(度)
+    const CAMERA_POSITION_X: number = 500; //カメラのポジション（X軸）
+    const CAMERA_POSITION_Z: number = 1000; //カメラのポジション（Z軸）
+    const PLAYER_HALF_SIZE: number = 35; //プレイヤーの半径
+    const PLAYER_POSITION_Z: number = 500; //プレイヤーのポジション（Z軸）
+    const HIT_PLAY: number = 15; //当たり判定のあそび（通常の当たり判定はシビアすぎて面白くないため）
 
 
     //ゲームオーバーを保持するステート
@@ -42,50 +47,50 @@ export const Game = memo(() => {
 
         //マウスムーブイベントを定義
         canvasRef.current.addEventListener('mousemove', function (evt) {
-            let mousePos = getMousePosition(canvasRef.current, evt);
+            let mousePos: MousPos = getMousePosition(canvasRef.current, evt);
             //プレイヤーの中心からのY座標
             mousePositionYRef.current = ((DISPLAY_HEIGHT / 2) - mousePos.y) * (FIELD_LIMIT * 2 / DISPLAY_HEIGHT);
         }, false);
 
         //プレイヤーの移動とマウスカーソルの移動を調整する倍率を計算
-        const movementMagnification = calc();
+        const movementMagnification: number = calc();
 
         //レンダラーを作成
-        const renderer = new THREE.WebGLRenderer({
+        const renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer({
             canvas: canvasRef.current,
         });
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(DISPLAY_WIDTH, DISPLAY_HEIGHT);
 
         // シーンを作成
-        const scene = new THREE.Scene();
+        const scene: THREE.Scene = new THREE.Scene();
 
         // カメラを作成
-        const camera = new THREE.PerspectiveCamera(CAMERA_FIELD_OF_VIEW, DISPLAY_WIDTH / DISPLAY_HEIGHT, 0.1, 2000);
+        const camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(CAMERA_FIELD_OF_VIEW, DISPLAY_WIDTH / DISPLAY_HEIGHT, 0.1, 2000);
         camera.position.set(CAMERA_POSITION_X, 0, CAMERA_POSITION_Z);
 
         //天井
-        const roofGeometry = new THREE.BoxGeometry(400, FIELD_LIMIT * 2, 8000);
-        const roofMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
-        const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+        const roofGeometry: THREE.BoxGeometry = new THREE.BoxGeometry(400, FIELD_LIMIT * 2, 8000);
+        const roofMaterial: THREE.MeshBasicMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+        const roof: THREE.Mesh = new THREE.Mesh(roofGeometry, roofMaterial);
         roof.position.set(0, FIELD_LIMIT * 2, -3000)
         scene.add(roof);
         //床 
-        const floorGeometry = new THREE.BoxGeometry(400, FIELD_LIMIT * 2, 8000);
-        const floorMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
-        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        const floorGeometry: THREE.BoxGeometry = new THREE.BoxGeometry(400, FIELD_LIMIT * 2, 8000);
+        const floorMaterial: THREE.MeshBasicMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+        const floor: THREE.Mesh = new THREE.Mesh(floorGeometry, floorMaterial);
         floor.position.set(0, -FIELD_LIMIT * 2, -3000)
         scene.add(floor);
 
         //プレイヤーを作成
-        const playerGeometry = new THREE.SphereGeometry(PLAYER_HALF_SIZE, 50, 50);
-        const playerMaterial = new THREE.MeshToonMaterial({ color: 'red' });
-        const player = new THREE.Mesh(playerGeometry, playerMaterial);
+        const playerGeometry: THREE.SphereGeometry = new THREE.SphereGeometry(PLAYER_HALF_SIZE, 50, 50);
+        const playerMaterial: THREE.MeshToonMaterial = new THREE.MeshToonMaterial({ color: 'red' });
+        const player: THREE.Mesh = new THREE.Mesh(playerGeometry, playerMaterial);
         player.position.set(0, -(FIELD_LIMIT - PLAYER_HALF_SIZE), PLAYER_POSITION_Z)
         scene.add(player);
 
         // 平行光源
-        const directionalLight = new THREE.DirectionalLight('red');
+        const directionalLight: THREE.DirectionalLight = new THREE.DirectionalLight('red');
         directionalLight.position.set(1, 1, 1);
         // シーンに追加
         scene.add(directionalLight);
@@ -94,9 +99,9 @@ export const Game = memo(() => {
         let boxs: Array<EnemyBox> = [];
         let enemyBox: EnemyBox;
         for (let i = 0; i < 10; i++) {
-            const boxGeometry = new THREE.BoxGeometry(BOX_HALF_SIZE * 2, BOX_HALF_SIZE * 2, BOX_HALF_SIZE * 2);
-            const boxMaterial = new THREE.MeshNormalMaterial();
-            const box = new THREE.Mesh(boxGeometry, boxMaterial);
+            const boxGeometry: THREE.BoxGeometry = new THREE.BoxGeometry(BOX_HALF_SIZE * 2, BOX_HALF_SIZE * 2, BOX_HALF_SIZE * 2);
+            const boxMaterial: THREE.MeshNormalMaterial = new THREE.MeshNormalMaterial();
+            const box: THREE.Mesh = new THREE.Mesh(boxGeometry, boxMaterial);
             box.position.set(0, generateRundomHeight(), BOX_START_POSITION_Z)
             scene.add(box);
             enemyBox = { box: box, isMoveing: false };
@@ -104,19 +109,19 @@ export const Game = memo(() => {
         }
 
         //ループイベント起動時の時間を取得
-        let lastTime = performance.now();
+        let lastTime: number = performance.now();
         //リザルト用のスタート時間を保持
-        let startTime = lastTime;
+        let startTime: number = lastTime;
         //ループイベント起動
         tick();
 
         // 毎フレーム時に実行されるループイベント
         function tick() {
             //時間ごとの動作量を計算
-            var nowTime = performance.now()
-            let time = nowTime - lastTime;
+            let nowTime: number = performance.now()
+            let time: number = nowTime - lastTime;
             lastTime = nowTime;
-            const movement = (time / 10);//動作量
+            const movement: number = (time / 10);//動作量
 
             //プレイヤーの移動
             if (mousePositionYRef.current * movementMagnification < (FIELD_LIMIT - PLAYER_HALF_SIZE) && mousePositionYRef.current * movementMagnification > -(FIELD_LIMIT - PLAYER_HALF_SIZE)) {
@@ -169,8 +174,8 @@ export const Game = memo(() => {
     }, [])
 
     //マウスポジションを取得
-    function getMousePosition(canvas: HTMLCanvasElement, evt: HTMLElementEventMap['mousemove']) {
-        var rect = canvas.getBoundingClientRect();
+    function getMousePosition(canvas: HTMLCanvasElement, evt: HTMLElementEventMap['mousemove']): MousPos {
+        let rect: DOMRect = canvas.getBoundingClientRect();
         return {
             x: evt.clientX - rect.left,
             y: evt.clientY - rect.top
@@ -184,9 +189,9 @@ export const Game = memo(() => {
 
     //プレイヤーの位置に対する移動距離の倍率を計算
     function calc(): number {
-        let theta0 = Math.atan(CAMERA_POSITION_Z / CAMERA_POSITION_X); //ラジアン
-        let theta1 = Math.atan((CAMERA_POSITION_Z - PLAYER_POSITION_Z) / CAMERA_POSITION_X); //ラジアン
-        let theta2 = (theta0 / (Math.PI / 180) - CAMERA_FIELD_OF_VIEW / 2) * (Math.PI / 180); //ラジアン
+        let theta0: number = Math.atan(CAMERA_POSITION_Z / CAMERA_POSITION_X); //ラジアン
+        let theta1: number = Math.atan((CAMERA_POSITION_Z - PLAYER_POSITION_Z) / CAMERA_POSITION_X); //ラジアン
+        let theta2: number = (theta0 / (Math.PI / 180) - CAMERA_FIELD_OF_VIEW / 2) * (Math.PI / 180); //ラジアン
 
         return Math.cos(theta2) / Math.cos(theta1);
     }
