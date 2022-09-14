@@ -195,11 +195,11 @@ export const Game = memo(() => {
         let theta: number = Math.atan((CAMERA_POSITION_Z - PLAYER_POSITION_Z) / CAMERA_POSITION_X); //ラジアン
         //斜辺の長さを計算
         let hypotenuse = CAMERA_POSITION_X / Math.cos(theta);
-        //プレイヤー位置の床から天井までの長さを計算
-        let height = (FIELD_LIMIT / (Math.tan(CAMERA_FIELD_OF_VIEW / 2 * (Math.PI / 180)) * hypotenuse)) * FIELD_LIMIT;
+        //プレイヤー位置の視野の高さを計算
+        let height = (Math.tan(CAMERA_FIELD_OF_VIEW / 2 * (Math.PI / 180)) * hypotenuse);
 
-        //ゲーム表示枠の高さ / レイヤー位置の床から天井までの長さ
-        return FIELD_LIMIT / height;
+        //プレイヤー位置の視野の高さ / ゲーム表示枠の高さ
+        return height / FIELD_LIMIT;
     }
 
     return (
