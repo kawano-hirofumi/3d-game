@@ -1,14 +1,16 @@
 import { memo, useEffect, useRef, useState } from "react";
 import * as THREE from 'three'
 
+//ボックスの状態
 type EnemyBox = {
-    box: THREE.Mesh;
-    isMoveing: boolean;
+    box: THREE.Mesh; //ボックスのメッシュ
+    isMoveing: boolean; //移動状態（true: 移動中, false: 停止中）
 }
 
+//マウスポジション
 type MousPos = {
-    x: number,
-    y: number
+    x: number;
+    y: number;
 }
 
 export const Game = memo(() => {
@@ -54,7 +56,6 @@ export const Game = memo(() => {
 
         //プレイヤーの移動とマウスカーソルの移動を調整する倍率を計算
         const movementMagnification: number = calc();
-
         //レンダラーを作成
         const renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer({
             canvas: canvasRef.current,
@@ -130,8 +131,9 @@ export const Game = memo(() => {
 
             //ボックスの移動
             boxs.map((value) => {
-
+                //ボックスの移動状態を判定
                 if (value.isMoveing === false) {
+                    //停止状態ならランダムで移動中状態にする
                     if (Math.random() <= BOX_APPEARANCE_RATE) {
                         value.isMoveing = true;
                     }
@@ -189,11 +191,15 @@ export const Game = memo(() => {
 
     //プレイヤーの位置に対する移動距離の倍率を計算
     function calc(): number {
-        let theta0: number = Math.atan(CAMERA_POSITION_Z / CAMERA_POSITION_X); //ラジアン
-        let theta1: number = Math.atan((CAMERA_POSITION_Z - PLAYER_POSITION_Z) / CAMERA_POSITION_X); //ラジアン
-        let theta2: number = (theta0 / (Math.PI / 180) - CAMERA_FIELD_OF_VIEW / 2) * (Math.PI / 180); //ラジアン
+        //角度を計算
+        let theta: number = Math.atan((CAMERA_POSITION_Z - PLAYER_POSITION_Z) / CAMERA_POSITION_X); //ラジアン
+        //斜辺の長さを計算
+        let hypotenuse = CAMERA_POSITION_X / Math.cos(theta);
+        //プレイヤー位置の床から天井までの長さを計算
+        let height = (FIELD_LIMIT / (Math.tan(CAMERA_FIELD_OF_VIEW / 2 * (Math.PI / 180)) * hypotenuse)) * FIELD_LIMIT;
 
-        return Math.cos(theta2) / Math.cos(theta1);
+        //ゲーム表示枠の高さ / レイヤー位置の床から天井までの長さ
+        return FIELD_LIMIT / height;
     }
 
     return (
